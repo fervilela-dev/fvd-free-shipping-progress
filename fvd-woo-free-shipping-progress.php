@@ -3,7 +3,7 @@
  * Plugin Name: FVD Woo Free Shipping Progress
  * Plugin URI: https://github.com/fervilela-dev/fvd-free-shipping-progress
  * Description: Muestra una barra de progreso que indica cuánto falta para llegar al envío gratuito (WooCommerce).
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: FerVilela Digital Consulting
  * Author URI: https://fervilela.com
  * Text Domain: fvd-free-shipping-progress
@@ -48,8 +48,10 @@ final class FVD_Free_Shipping_Progress {
 		add_action('wp_ajax_nopriv_' . self::AJAX_ACTION, [$this, 'ajax_fragment']);
 		add_filter('woocommerce_add_to_cart_fragments', [$this, 'add_fragment']);
 
-		// Xootix Side Cart (xoo-wsc) integration: footer hook lives inside modal.
+		// Xootix Side Cart (xoo-wsc) integration: hook across variants and print once.
 		add_action('xoo_wsc_footer', [$this, 'render_on_xoo_sidecart']);
+		add_action('xoo_wsc_footer_extras', [$this, 'render_on_xoo_sidecart']);
+		add_action('xoo_wsc_before_footer', [$this, 'render_on_xoo_sidecart']);
 
 		// Admin settings
 		add_action('admin_menu', [$this, 'admin_menu']);
@@ -204,7 +206,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.css', __FILE__),
 			[],
-			'1.0.4'
+			'1.0.5'
 		);
 		wp_enqueue_style('fvd-freeship');
 
@@ -212,7 +214,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.js', __FILE__),
 			['jquery'],
-			'1.0.4',
+			'1.0.5',
 			true
 		);
 
@@ -252,9 +254,14 @@ final class FVD_Free_Shipping_Progress {
 
 	// Xootix Woo Side Cart (xoo-wsc) modal support: uses its own hook.
 	public function render_on_xoo_sidecart() {
+		static $printed = false;
+		if ($printed) return;
+
 		$settings = $this->get_settings();
 		if (($settings['enabled'] ?? 'yes') !== 'yes') return;
 		if (($settings['show_mini_cart'] ?? 'yes') !== 'yes') return;
+
+		$printed = true;
 		echo '<div class="xoo-wsc-fvd">' . $this->render_bar('mini') . '</div>';
 	}
 
