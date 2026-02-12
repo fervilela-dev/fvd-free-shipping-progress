@@ -3,7 +3,7 @@
  * Plugin Name: FVD Woo Free Shipping Progress
  * Plugin URI: https://github.com/fervilela-dev/fvd-free-shipping-progress
  * Description: Muestra una barra de progreso que indica cuánto falta para llegar al envío gratuito (WooCommerce).
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: FerVilela Digital Consulting
  * Author URI: https://fervilela.com
  * Text Domain: fvd-free-shipping-progress
@@ -19,6 +19,9 @@ final class FVD_Free_Shipping_Progress {
 	const OPT_KEY = 'fvd_freeship_settings';
 	const NONCE_ACTION = 'fvd_freeship_save_settings';
 	const AJAX_ACTION = 'fvd_freeship_fragment';
+	const UPDATE_TRANSIENT = 'fvd_freeship_update_payload';
+	const GITHUB_REPO = 'fervilela-dev/fvd-free-shipping-progress';
+	const SLUG = 'fvd-woo-free-shipping-progress';
 
 	public function __construct() {
 		add_action('plugins_loaded', [$this, 'boot']);
@@ -52,6 +55,96 @@ final class FVD_Free_Shipping_Progress {
 		add_action('admin_menu', [$this, 'admin_menu']);
 		add_action('admin_init', [$this, 'maybe_save_settings']);
 		register_activation_hook(__FILE__, [__CLASS__, 'activate']);
+
+		// GitHub self-updates
+		$this->setup_updater();
+	}
+
+	private function setup_updater() {
+		add_filter('pre_set_site_transient_update_plugins', [$this, 'maybe_set_update']);
+		add_filter('plugins_api', [$this, 'plugin_information'], 10, 3);
+	}
+
+	public function maybe_set_update($transient) {
+		if (!is_object($transient)) return $transient;
+
+		$payload = $this->fetch_latest_release();
+		if (!$payload) return $transient;
+
+		$current_version = $this->get_version();
+		if (version_compare($payload['tag_name'], $current_version, '<=')) return $transient;
+
+		$item = (object) [
+			'slug' => self::SLUG,
+			'plugin' => plugin_basename(__FILE__),
+			'new_version' => $payload['tag_name'],
+			'package' => $payload['zip_url'],
+			'url' => $payload['html_url'],
+		];
+
+		$transient->response[plugin_basename(__FILE__)] = $item;
+		return $transient;
+	}
+
+	public function plugin_information($res, $action, $args) {
+		if ($action !== 'plugin_information') return $res;
+		if (!isset($args->slug) || $args->slug !== self::SLUG) return $res;
+
+		$payload = $this->fetch_latest_release();
+		if (!$payload) return $res;
+
+		return (object) [
+			'name' => 'FVD Woo Free Shipping Progress',
+			'slug' => self::SLUG,
+			'plugin_name' => plugin_basename(__FILE__),
+			'author' => '<a href="https://fervilela.com">FerVilela Digital Consulting</a>',
+			'homepage' => 'https://github.com/' . self::GITHUB_REPO,
+			'sections' => [
+				'description' => '<p>Barra de progreso para mostrar cuánto falta para envío gratis en WooCommerce.</p>',
+			],
+			'last_updated' => $payload['published_at'],
+			'version' => $payload['tag_name'],
+			'download_link' => $payload['zip_url'],
+		];
+	}
+
+	private function fetch_latest_release() {
+		$cached = get_site_transient(self::UPDATE_TRANSIENT);
+		if (is_array($cached)) return $cached;
+
+		$request = wp_remote_get('https://api.github.com/repos/' . self::GITHUB_REPO . '/releases/latest', [
+			'timeout' => 8,
+			'headers' => [
+				'Accept' => 'application/vnd.github+json',
+				'User-Agent' => self::SLUG,
+			],
+		]);
+
+		if (is_wp_error($request)) return false;
+		$code = wp_remote_retrieve_response_code($request);
+		if ($code !== 200) return false;
+
+		$body = json_decode(wp_remote_retrieve_body($request), true);
+		if (!is_array($body) || empty($body['tag_name'])) return false;
+
+		$payload = [
+			'tag_name' => ltrim($body['tag_name'], 'v'),
+			'zip_url' => $body['zipball_url'],
+			'html_url' => $body['html_url'],
+			'published_at' => $body['published_at'] ?? '',
+		];
+
+		// Cache for 6 hours
+		set_site_transient(self::UPDATE_TRANSIENT, $payload, 6 * HOUR_IN_SECONDS);
+		return $payload;
+	}
+
+	private function get_version(): string {
+		if (!function_exists('get_plugin_data')) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$data = get_plugin_data(__FILE__, false, false);
+		return $data['Version'] ?? '0.0.0';
 	}
 
 	public static function activate() {
@@ -111,7 +204,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.css', __FILE__),
 			[],
-			'1.0.3'
+			'1.0.4'
 		);
 		wp_enqueue_style('fvd-freeship');
 
@@ -119,7 +212,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.js', __FILE__),
 			['jquery'],
-			'1.0.3',
+			'1.0.4',
 			true
 		);
 
