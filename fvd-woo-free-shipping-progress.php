@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FVD Woo Free Shipping Progress
  * Description: Muestra una barra de progreso que indica cuánto falta para llegar al envío gratuito (WooCommerce).
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: FerVilela Digital Consulting
  * Author URI: https://fervilela.com
  * Text Domain: fvd-free-shipping-progress
@@ -41,6 +41,9 @@ final class FVD_Free_Shipping_Progress {
 		add_action('wp_ajax_' . self::AJAX_ACTION, [$this, 'ajax_fragment']);
 		add_action('wp_ajax_nopriv_' . self::AJAX_ACTION, [$this, 'ajax_fragment']);
 		add_filter('woocommerce_add_to_cart_fragments', [$this, 'add_fragment']);
+
+		// Xootix Side Cart (xoo-wsc) integration: footer hook lives inside modal.
+		add_action('xoo_wsc_footer', [$this, 'render_on_xoo_sidecart']);
 
 		// Admin settings
 		add_action('admin_menu', [$this, 'admin_menu']);
@@ -89,19 +92,23 @@ final class FVD_Free_Shipping_Progress {
 		$settings = $this->get_settings();
 		if (($settings['enabled'] ?? 'yes') !== 'yes') return;
 
-		// Solo en páginas donde tenga sentido (aún así, el shortcode también funciona en cualquier página)
-		if (!is_cart() && !is_checkout() && !is_shop() && !is_product() && !is_product_category() && !is_product_tag()) {
-			// Si hay shortcode en el contenido, sí cargamos
-			global $post;
-			$has_shortcode = is_object($post) && isset($post->post_content) && has_shortcode($post->post_content, 'fvd_free_shipping_bar');
-			if (!$has_shortcode) return;
+		// Siempre cargamos si se quiere mostrar en mini-cart/side-cart.
+		$should_enqueue = ($settings['show_mini_cart'] ?? 'yes') === 'yes';
+
+		// Para el resto de contextos seguimos limitando a páginas relevantes o cuando el shortcode está presente.
+		if (!$should_enqueue) {
+			if (!is_cart() && !is_checkout() && !is_shop() && !is_product() && !is_product_category() && !is_product_tag()) {
+				global $post;
+				$has_shortcode = is_object($post) && isset($post->post_content) && has_shortcode($post->post_content, 'fvd_free_shipping_bar');
+				if (!$has_shortcode) return;
+			}
 		}
 
 		wp_register_style(
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.css', __FILE__),
 			[],
-			'1.0.0'
+			'1.0.1'
 		);
 		wp_enqueue_style('fvd-freeship');
 
@@ -109,7 +116,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.js', __FILE__),
 			['jquery'],
-			'1.0.0',
+			'1.0.1',
 			true
 		);
 
@@ -145,6 +152,14 @@ final class FVD_Free_Shipping_Progress {
 		if (($settings['enabled'] ?? 'yes') !== 'yes') return;
 		if (($settings['show_mini_cart'] ?? 'yes') !== 'yes') return;
 		echo $this->render_bar('mini');
+	}
+
+	// Xootix Woo Side Cart (xoo-wsc) modal support: uses its own hook.
+	public function render_on_xoo_sidecart() {
+		$settings = $this->get_settings();
+		if (($settings['enabled'] ?? 'yes') !== 'yes') return;
+		if (($settings['show_mini_cart'] ?? 'yes') !== 'yes') return;
+		echo '<div class="xoo-wsc-fvd">' . $this->render_bar('mini') . '</div>';
 	}
 
 	public function shortcode($atts = []) {

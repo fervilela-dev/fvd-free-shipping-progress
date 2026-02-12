@@ -5,6 +5,10 @@
   border-radius:10px;
   background:#fff;
 }
+.xoo-wsc-modal .xoo-wsc-body .xoo-wsc-content .xoo-wsc-fvd .fvd-freeship-bar{
+  margin-top:6px;
+  margin-bottom:0;
+}
 .fvd-freeship-text{
   font-size:14px;
   line-height:1.3;
