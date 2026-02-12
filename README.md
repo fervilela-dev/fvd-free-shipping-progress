@@ -3,6 +3,7 @@ Free shipping progress bar.
 
 ## Changelog
 
+- **1.0.6** — El checker limpia caché cuando pulsas “Buscar actualizaciones” y reduce el cacheo del release a 1h para detectar tags nuevos enseguida.
 - **1.0.5** — La barra ahora se muestra en Woocommerce Side Cart Premium (xoo-wsc) enganchándonos a varios hooks y evitando duplicados.
 - **1.0.4** — Auto‑actualización nativa: el plugin consulta el último release en GitHub y muestra la actualización directamente en WordPress (sin depender de plugins externos). Versions cacheadas 6h.
 - **1.0.3** — Añadido metadato `Primary Branch: main` en el header del plugin para compatibilidad con actualizadores GitHub.
