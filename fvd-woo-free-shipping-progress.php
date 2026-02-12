@@ -3,11 +3,12 @@
  * Plugin Name: FVD Woo Free Shipping Progress
  * Plugin URI: https://github.com/fervilela-dev/fvd-free-shipping-progress
  * Description: Muestra una barra de progreso que indica cuánto falta para llegar al envío gratuito (WooCommerce).
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: FerVilela Digital Consulting
  * Author URI: https://fervilela.com
  * Text Domain: fvd-free-shipping-progress
  * GitHub Plugin URI: https://github.com/fervilela-dev/fvd-free-shipping-progress
+ * Primary Branch: main
  */
 
 defined('ABSPATH') || exit;
@@ -110,7 +111,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.css', __FILE__),
 			[],
-			'1.0.2'
+			'1.0.3'
 		);
 		wp_enqueue_style('fvd-freeship');
 
@@ -118,7 +119,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.js', __FILE__),
 			['jquery'],
-			'1.0.2',
+			'1.0.3',
 			true
 		);
 
