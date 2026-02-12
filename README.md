@@ -3,6 +3,7 @@ Free shipping progress bar.
 
 ## Changelog
 
+- **1.0.7** — El auto-update ahora usa el asset ZIP del release (`fvd-free-shipping-progress.zip`) en lugar del `zipball_url` para evitar carpetas con hash que rompen el plugin. Si el asset falta, no se ofrece actualización.
 - **1.0.6** — El checker limpia caché cuando pulsas “Buscar actualizaciones” y reduce el cacheo del release a 1h para detectar tags nuevos enseguida.
 - **1.0.5** — La barra ahora se muestra en Woocommerce Side Cart Premium (xoo-wsc) enganchándonos a varios hooks y evitando duplicados.
 - **1.0.4** — Auto‑actualización nativa: el plugin consulta el último release en GitHub y muestra la actualización directamente en WordPress (sin depender de plugins externos). Versions cacheadas 6h.
@@ -13,6 +14,6 @@ Free shipping progress bar.
 
 ## Cómo publicar una actualización
 
-1. Genera un release en GitHub con tag `vX.Y.Z` (ej: `v1.0.4`) en `fervilela-dev/fvd-free-shipping-progress`.  
-2. Almacenará el zip automático de GitHub; WordPress lo leerá y mostrará la actualización en Plugins → Actualizaciones.  
-3. El checado se cachea por 6 h; si necesitas forzar, presiona “Buscar actualizaciones” en la pantalla de plugins o ejecuta `wp transient delete --all` vía WP-CLI.
+1. Genera un release en GitHub con tag `vX.Y.Z` (ej: `v1.0.7`) en `fervilela-dev/fvd-free-shipping-progress`.  
+2. Adjunta un asset ZIP llamado **`fvd-free-shipping-progress.zip`** que contenga la carpeta del plugin en la raíz. Ese es el paquete que WordPress descargará.  
+3. El checado se cachea por 1 h; si necesitas forzar, pulsa “Buscar actualizaciones” en la pantalla de plugins o borra el transient `fvd_freeship_update_payload` (WP-CLI: `wp transient delete --network fvd_freeship_update_payload` o `wp transient delete fvd_freeship_update_payload`).

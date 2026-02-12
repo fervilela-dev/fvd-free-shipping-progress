@@ -3,7 +3,7 @@
  * Plugin Name: FVD Woo Free Shipping Progress
  * Plugin URI: https://github.com/fervilela-dev/fvd-free-shipping-progress
  * Description: Muestra una barra de progreso que indica cuánto falta para llegar al envío gratuito (WooCommerce).
- * Version: 1.0.6
+ * Version: 1.0.7
  * Author: FerVilela Digital Consulting
  * Author URI: https://fervilela.com
  * Text Domain: fvd-free-shipping-progress
@@ -22,6 +22,7 @@ final class FVD_Free_Shipping_Progress {
 	const UPDATE_TRANSIENT = 'fvd_freeship_update_payload';
 	const GITHUB_REPO = 'fervilela-dev/fvd-free-shipping-progress';
 	const SLUG = 'fvd-woo-free-shipping-progress';
+	const RELEASE_ASSET_ZIP = 'fvd-free-shipping-progress.zip';
 
 	public function __construct() {
 		add_action('plugins_loaded', [$this, 'boot']);
@@ -133,9 +134,23 @@ final class FVD_Free_Shipping_Progress {
 		$body = json_decode(wp_remote_retrieve_body($request), true);
 		if (!is_array($body) || empty($body['tag_name'])) return false;
 
+		$asset_url = '';
+		if (!empty($body['assets']) && is_array($body['assets'])) {
+			foreach ($body['assets'] as $asset) {
+				if (!isset($asset['name']) || $asset['name'] !== self::RELEASE_ASSET_ZIP) continue;
+				if (!empty($asset['browser_download_url'])) {
+					$asset_url = $asset['browser_download_url'];
+					break;
+				}
+			}
+		}
+
+		// We avoid GitHub's zipball_url because it descomprime en carpetas con hash, lo que rompe la ruta del plugin en WordPress. Solo usamos el asset ZIP con nombre fijo.
+		if ($asset_url === '') return false;
+
 		$payload = [
 			'tag_name' => ltrim($body['tag_name'], 'v'),
-			'zip_url' => $body['zipball_url'],
+			'zip_url' => $asset_url,
 			'html_url' => $body['html_url'],
 			'published_at' => $body['published_at'] ?? '',
 		];
@@ -214,7 +229,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.css', __FILE__),
 			[],
-			'1.0.6'
+			'1.0.7'
 		);
 		wp_enqueue_style('fvd-freeship');
 
@@ -222,7 +237,7 @@ final class FVD_Free_Shipping_Progress {
 			'fvd-freeship',
 			plugins_url('assets/fvd-freeship.js', __FILE__),
 			['jquery'],
-			'1.0.6',
+			'1.0.7',
 			true
 		);
 
